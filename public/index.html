@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatBud</title>
+
+    <style>
+      body {
+        font-family: Roboto, sans-serif;
+        background: linear-gradient(to right, #2c3531, #116466, #d9b08c);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .welcome-container,
+      .chat-container {
+        width: 80%;
+        justify-content: center;
+        max-width: 600px;
+        background: #1f2833;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        position: relative;
+      }
+      .welcome-container {
+        text-align: center;
+      }
+
+      .app-title {
+        font-size: 2.5em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #66fcf1;
+      }
+      #nickname-input {
+        color: white;
+        width: 100%;
+        padding: 10px;
+        font-size: 1.2em;
+
+        border: none;
+
+        background-color: transparent;
+
+        margin-bottom: 20px;
+        outline: none;
+      }
+
+      .start-chat-button {
+        padding: 15px 30px;
+        border: none;
+        font-size: 1.2em;
+        border-radius: 1000px;
+        background-color: #009688;
+        color: black;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        position: relative;
+      }
+
+      .start-chat-button:hover {
+        background-color: #66fcf1;
+      }
+
+      .messages {
+        list-style: none;
+        color: white;
+        padding: 0;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+      }
+
+      .messages li {
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
+        word-wrap: break-word;
+      }
+
+      .messages li:nth-child(odd) {
+        background: #5f6366;
+      }
+
+      .message-input-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .message-input {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        margin-right: 10px;
+      }
+      .message-input:focus {
+        border: 0.2px solid #66fcf1;
+        outline: 1px solid #66fcf1;
+      }
+
+      .send-button {
+        padding: 12px 20px;
+        border: none;
+        background: #009688;
+        color: white;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+      }
+
+      .send-button:hover {
+        background-color: #19181a;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="welcome-container" class="welcome-container">
+      <div class="app-title">Welcome to ChatBud</div>
+
+      <input id="nickname-input" placeholder="Enter your name" />
+      <button id="start-chat-button" class="start-chat-button">
+        Enter Chat
+      </button>
+    </div>
+
+    <div id="chat-container" class="chat-container" style="display: none">
+      <ul id="messages" class="messages"></ul>
+      <div class="message-input-container">
+        <input
+          id="message-input"
+          class="message-input"
+          autocomplete="off"
+          placeholder="Type your message here..."
+        />
+        <button id="send-button" class="send-button">Send</button>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io("http://localhost:3001");
+
+      const welcomeContainer = document.getElementById("welcome-container");
+      const nicknameInput = document.getElementById("nickname-input");
+      const startChatButton = document.getElementById("start-chat-button");
+      const chatContainer = document.getElementById("chat-container");
+      const messages = document.getElementById("messages");
+      const messageInput = document.getElementById("message-input");
+      const sendButton = document.getElementById("send-button");
+
+      let nickname = "";
+
+      startChatButton.addEventListener("click", () => {
+        nickname = nicknameInput.value.trim();
+        if (nickname) {
+          socket.emit("joinChat", nickname);
+          welcomeContainer.style.display = "none";
+          chatContainer.style.display = "block";
+          messageInput.focus();
+        } else {
+          alert("Please enter a nickname");
+        }
+      });
+
+      socket.on("chatMessage", (data) => {
+        const li = document.createElement("li");
+        li.textContent = `${data.nickname}: ${data.message}`;
+        messages.appendChild(li);
+        messages.scrollTop = messages.scrollHeight;
+      });
+
+      function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+          socket.emit("chatMessage", { message, nickname });
+          messageInput.value = "";
+          messageInput.focus();
+        }
+      }
+
+      sendButton.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+    </script>
+  </body>
+</html>
